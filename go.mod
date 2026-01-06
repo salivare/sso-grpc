@@ -10,7 +10,11 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/golang-migrate/migrate v3.5.4+incompatible // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/mattn/go-sqlite3 v1.14.33 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
