@@ -5,6 +5,8 @@ import (
 	"github.com/salivare/sso-grpc/internal/config"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -20,9 +22,18 @@ func main() {
 
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
 
-	application.GRPCSrv.MustRun()
+	go application.GRPCSrv.MustRun()
 
-	log.Info("starting server")
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	<-stop
+
+	log.Info("Shutting down...")
+
+	application.GRPCSrv.Stop()
+
+	log.Info("Goodbye!")
 }
 
 func setupLogger(env string) *slog.Logger {
