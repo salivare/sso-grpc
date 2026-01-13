@@ -1,4 +1,4 @@
-package model
+package models
 
 type App struct {
 	ID     int64

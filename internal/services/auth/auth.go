@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/salivare/sso-grpc/internal/domain/model"
+	"github.com/salivare/sso-grpc/internal/domain/models"
 	"github.com/salivare/sso-grpc/internal/lib/jwt"
 	"github.com/salivare/sso-grpc/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -29,18 +29,19 @@ type UserSaver interface {
 }
 
 type UserProvider interface {
-	User(ctx context.Context, email string) (model.User, error)
+	User(ctx context.Context, email string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
 
 type AppProvider interface {
-	App(ctx context.Context, appID int) (model.App, error)
+	App(ctx context.Context, appID int32) (models.App, error)
 }
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrInvalidAppID       = errors.New("invalid app id")
 	ErrUserExist          = errors.New("user already exists")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 // New returns a new instance of the Auth service.
@@ -62,8 +63,8 @@ func New(
 func (a *Auth) Login(
 	ctx context.Context,
 	email string,
-	pass string,
-	appID int,
+	password string,
+	appID int32,
 ) (string, error) {
 	const op = "auth.Login"
 
@@ -87,7 +88,7 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(pass)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("invalid credentials", slog.String("err", err.Error()))
 
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
@@ -110,12 +111,12 @@ func (a *Auth) Login(
 	return token, nil
 }
 
-func (a *Auth) RegisterNewUser(
+func (a *Auth) Register(
 	ctx context.Context,
 	email string,
 	pass string,
 ) (int64, error) {
-	const op = "auth.registerNewUser"
+	const op = "auth.register"
 
 	log := a.log.With(
 		slog.String("op", op),

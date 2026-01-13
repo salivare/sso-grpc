@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"errors"
 	ssov1 "github.com/salivare/protos-sso/gen/go/sso"
+	"github.com/salivare/sso-grpc/internal/services/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +15,7 @@ type Auth interface {
 		ctx context.Context,
 		email string,
 		password string,
-		appId int32,
+		appID int32,
 	) (token string, err error)
 	Register(
 		ctx context.Context,
@@ -50,7 +52,9 @@ func (s *ServerAPI) Login(
 
 	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
 	if err != nil {
-		// TODO:...
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
 		return nil, status.Error(codes.Internal, "Internal error")
 	}
 
@@ -70,7 +74,9 @@ func (s *ServerAPI) Register(
 
 	userID, err := s.auth.Register(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		// TODO: ...
+		if errors.Is(err, auth.ErrUserExist) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
 		return nil, status.Error(codes.Internal, "Internal error")
 	}
 
@@ -90,6 +96,10 @@ func (s *ServerAPI) IsAdmin(
 
 	isAdmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
 	if err != nil {
+		if errors.Is(err, auth.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+
 		return nil, status.Error(codes.Internal, "Internal error")
 	}
 

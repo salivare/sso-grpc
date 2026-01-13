@@ -4,16 +4,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/golang-migrate/migrate"
-	_ "github.com/golang-migrate/migrate/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/source/file"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-	var storagePath, migrationPath string
+	var storagePath, migrationPath, migrationTable string
 
 	flag.StringVar(&storagePath, "storage-path", "", "path to store the migration files")
 	flag.StringVar(&migrationPath, "migrations-path", "", "path to store the migration files")
+	flag.StringVar(&migrationTable, "migrations-table", "", "path to store the migration table")
 	flag.Parse()
 
 	if storagePath == "" || migrationPath == "" {
@@ -22,7 +23,7 @@ func main() {
 
 	m, err := migrate.New(
 		"file://"+migrationPath,
-		fmt.Sprintf("sqlite3://%s", storagePath),
+		fmt.Sprintf("sqlite3://%s?x-migrations-table=%s", storagePath, migrationTable),
 	)
 	if err != nil {
 		panic(err)
